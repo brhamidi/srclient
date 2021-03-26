@@ -26,6 +26,7 @@ type ISchemaRegistryClient interface {
 	GetLatestSchema(subject string, isKey bool) (*Schema, error)
 	GetSchemaVersions(subject string, isKey bool) ([]int, error)
 	GetSchemaByVersion(subject string, version int, isKey bool) (*Schema, error)
+	GetVersionByID(schemaID int) (int, error)
 	CreateSchema(subject string, schema string, schemaType SchemaType, isKey bool, references ...Reference) (*Schema, error)
 	DeleteSubject(subject string, permanent bool) error
 	SetCredentials(username string, password string)
@@ -111,6 +112,7 @@ type isCompatibleResponse struct {
 
 const (
 	schemaByID       = "/schemas/ids/%d"
+	versionByID      = "/schemas/ids/%d/versions"
 	subjectVersions  = "/subjects/%s/versions"
 	subjectByVersion = "/subjects/%s/versions/%s"
 	subjects         = "/subjects"
@@ -229,6 +231,22 @@ func (client *SchemaRegistryClient) GetSubjects() ([]string, error) {
 // The schema returned contains the version specified as a parameter.
 func (client *SchemaRegistryClient) GetSchemaByVersion(subject string, version int, isKey bool) (*Schema, error) {
 	return client.getVersion(subject, strconv.Itoa(version), isKey)
+}
+
+// GetVersionByID returns a Version for the given ID
+func (client *SchemaRegistryClient) GetVersionByID(schemaID int) (int, error) {
+	resp, err := client.httpRequest("GET", fmt.Sprintf(versionByID, schemaID), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var versionResponse schemaResponse
+	err = json.Unmarshal(resp, &versionResponse)
+	if err != nil {
+		return 0, err
+	}
+
+	return versionResponse.Version, nil
 }
 
 // CreateSchema creates a new schema in Schema Registry and associates

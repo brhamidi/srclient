@@ -101,6 +101,21 @@ func (mck MockSchemaRegistryClient) GetSchema(schemaID int) (*Schema, error) {
 	return thisSchema, nil
 }
 
+// Returns a Schema for the given ID
+func (mck MockSchemaRegistryClient) GetVersionByID(schemaID int) (int, error) {
+	posErr := url.Error{
+		Op:  "GET",
+		URL: mck.schemaRegistryURL + fmt.Sprintf("/schemas/ids/%d/versions", schemaID),
+		Err: errors.New("Version doesn't exists for the given ID"),
+	}
+
+	thisSchema, ok := mck.idCache[schemaID]
+	if !ok {
+		return 0, &posErr
+	}
+	return thisSchema.version, nil
+}
+
 // Returns the highest ordinal version of a Schema for a given `concrete subject`
 func (mck MockSchemaRegistryClient) GetLatestSchema(subject string, isKey bool) (*Schema, error) {
 	versions, getSchemaVersionErr := mck.GetSchemaVersions(subject, isKey)
